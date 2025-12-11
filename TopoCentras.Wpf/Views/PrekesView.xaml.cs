@@ -1,5 +1,5 @@
 ﻿using System.Windows.Controls;
-using System.Windows.Input;
+using System.Windows.Threading;
 using TopoCentras.Core.Models;
 using TopoCentras.Wpf.ViewModels;
 
@@ -11,22 +11,21 @@ public partial class PrekesView : UserControl
     {
         InitializeComponent();
     }
-
-    private async void PrekesGrid_OnKeyUp(object sender, KeyEventArgs e)
+    
+    private void PrekesGrid_OnRowEditEnding(object? sender, DataGridRowEditEndingEventArgs e)
     {
-        if (e.Key != Key.Enter)
+        if (e.EditAction != DataGridEditAction.Commit)
             return;
-
-        PrekesGrid.CommitEdit(DataGridEditingUnit.Cell, true);
-        PrekesGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
         if (DataContext is not PrekesViewModel vm)
             return;
 
-        if (PrekesGrid.CurrentItem is not Preke preke)
+        if (e.Row.Item is not Preke preke)
             return;
-
-
-        await vm.UpdatePrekeAsync(preke);
+        
+        Dispatcher.BeginInvoke(new Action(async () =>
+        {
+            await vm.UpdatePrekeAsync(preke);
+        }), DispatcherPriority.Background);
     }
 }

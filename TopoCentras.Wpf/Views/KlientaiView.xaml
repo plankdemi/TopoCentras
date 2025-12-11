@@ -29,7 +29,7 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
                   CanUserAddRows="False"
-                  KeyUp="KlientaiGrid_OnKeyUp">
+                  RowEditEnding="KlientaiGrid_OnRowEditEnding">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="">
                     <DataGridTemplateColumn.CellTemplate>

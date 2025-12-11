@@ -45,7 +45,7 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
                   CanUserAddRows="False"
-                  KeyUp="PrekesGrid_OnKeyUp">
+                  RowEditEnding="PrekesGrid_OnRowEditEnding">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="">
                     <DataGridTemplateColumn.CellTemplate>
