@@ -1,0 +1,79 @@
+﻿<UserControl x:Class="TopoCentras.Wpf.Views.CreateUzsakymasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Margin="0 0 0 10">
+            <TextBlock Text="Klientas:"
+                       VerticalAlignment="Center"
+                       Margin="0 0 5 0" />
+            <ComboBox Width="250"
+                      ItemsSource="{Binding Klientai}"
+                      DisplayMemberPath="Pavadinimas"
+                      SelectedItem="{Binding SelectedKlientas}"
+                      Margin="0 0 10 0" />
+            <Button Content="Atnaujinti klientus"
+                    Command="{Binding LoadKlientaiCommand}" />
+        </StackPanel>
+
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Prekes}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header=""
+                                        Binding="{Binding IsSelected}"
+                                        Width="40" />
+
+                <DataGridTextColumn Header="Pavadinimas"
+                                    Binding="{Binding Preke.Pavadinimas}"
+                                    IsReadOnly="True"
+                                    Width="2*" />
+
+                <DataGridTextColumn Header="Gamintojas"
+                                    Binding="{Binding Preke.Gamintojas}"
+                                    IsReadOnly="True"
+                                    Width="2*" />
+
+                <DataGridTextColumn Header="Kaina"
+                                    Binding="{Binding Preke.Kaina}"
+                                    IsReadOnly="True"
+                                    Width="*" />
+
+                <DataGridTextColumn Header="Kiekis"
+                                    Binding="{Binding Kiekis,
+                      ValidatesOnExceptions=True,
+                      NotifyOnValidationError=True}"
+                                    Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0 10 0 0">
+            <Button Content="Sukurti uzsakymą"
+                    Margin="0 0 10 0"
+                    Padding="10,5"
+                    Click="OnCreateUzsakymasClick" />
+
+            <Button Content="Atsaukti uzsakyma"
+                    Margin="0 0 10 0"
+                    Padding="10,5"
+                    Click="OnCancelUzsakymasClick" />
+
+
+        </StackPanel>
+    </Grid>
+</UserControl>

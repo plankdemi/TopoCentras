@@ -1,0 +1,55 @@
+﻿<UserControl x:Class="TopoCentras.Wpf.Views.KlientaiView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:TopoCentras.Wpf.Converters">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+    <DockPanel Margin="10">
+        <StackPanel DockPanel.Dock="Top"
+                    Orientation="Horizontal"
+                    Margin="0 0 0 10">
+            <TextBlock Text="Klientai"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       Margin="0 0 20 0" />
+            <TextBox Width="200"
+                     Margin="0 0 5 0"
+                     Text="{Binding Pavadinimas, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Kliento Vardas" />
+            <Button Content="Sukurti Klienta"
+                    Margin="5 0 0 0"
+                    Command="{Binding CreateKlientasCommand}" />
+
+        </StackPanel>
+
+        <DataGrid x:Name="KlientaiGrid"
+                  ItemsSource="{Binding Klientai}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="False"
+                  CanUserAddRows="False"
+                  KeyUp="KlientaiGrid_OnKeyUp">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="X"
+                                    Padding="4,2"
+                                    Margin="5,0"
+                                    Command="{Binding DataContext.DeleteKlientasCommand,
+                                      RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"
+                                    Visibility="{Binding CanDelete, Converter={StaticResource BoolToVisibility}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Kliento Vardas" Binding="{Binding Pavadinimas}" Width="2*" />
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+    </DockPanel>
+
+
+</UserControl>
