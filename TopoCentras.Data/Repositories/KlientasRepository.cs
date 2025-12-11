@@ -32,7 +32,13 @@ public class KlientasRepository : IKlientasRepository
 
     public async Task UpdateAsync(Klientas klientas)
     {
-        _dbContext.Klientai.Update(klientas);
+        var existing = await _dbContext.Klientai.FindAsync(klientas.KlientasId);
+        if (existing != null)
+        {
+            existing.Pavadinimas = klientas.Pavadinimas;
+        }
+
+
         await _dbContext.SaveChangesAsync();
     }
 

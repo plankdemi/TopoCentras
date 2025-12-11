@@ -33,7 +33,16 @@ public class PrekeRepository : IPrekeRepository
 
     public async Task UpdateAsync(Preke preke)
     {
-        _dbContext.Prekes.Update(preke);
+        
+        var existing = await _dbContext.Prekes.FindAsync(preke.PrekeId);
+        if (existing != null)
+        {
+            existing.Pavadinimas = preke.Pavadinimas;
+            existing.Gamintojas = preke.Gamintojas;
+            existing.Kaina = preke.Kaina;
+            
+        }
+        
         await _dbContext.SaveChangesAsync();
     }
 
