@@ -26,11 +26,11 @@ public partial class App : Application
         const string connectionString =
             "Server=127.0.0.1;Port=3306;Database=TopoCentrasDb;User=user;Password=1234;";
 
-        services.AddDbContext<AppDbContext>(options =>
+        services.AddDbContextFactory<AppDbContext>(options =>
         {
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
         });
-
+        
         services.AddScoped<IKlientasRepository, KlientasRepository>();
         services.AddScoped<IPrekeRepository, PrekeRepository>();
         services.AddScoped<IUzsakymasPrekeRepository, UzsakymasPrekeRepository>();

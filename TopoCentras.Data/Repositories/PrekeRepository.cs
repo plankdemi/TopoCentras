@@ -6,35 +6,38 @@ namespace TopoCentras.Data.Repositories;
 
 public class PrekeRepository : IPrekeRepository
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public PrekeRepository(AppDbContext dbContext)
+    public PrekeRepository(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
     }
 
 
-    public Task<Preke?> GetByIdAsync(Guid id)
+    public async Task<Preke?> GetByIdAsync(Guid id)
     {
-        return _dbContext.Prekes.FindAsync(id).AsTask();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.Prekes.FindAsync(id).AsTask();
     }
 
-    public Task<List<Preke>> GetAllAsync()
+    public async Task<List<Preke>> GetAllAsync()
     {
-        return _dbContext.Prekes.AsNoTracking().ToListAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.Prekes.AsNoTracking().ToListAsync();
     }
 
 
     public async Task AddAsync(Preke preke)
     {
-        _dbContext.Prekes.Add(preke);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.Prekes.Add(preke);
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Preke preke)
     {
-        
-        var existing = await _dbContext.Prekes.FindAsync(preke.PrekeId);
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        var existing = await dbContext.Prekes.FindAsync(preke.PrekeId);
         if (existing != null)
         {
             existing.Pavadinimas = preke.Pavadinimas;
@@ -43,13 +46,14 @@ public class PrekeRepository : IPrekeRepository
             
         }
         
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var preke = await _dbContext.Prekes.FindAsync(id) ?? throw new InvalidOperationException("Preke Nerasta");
-        _dbContext.Prekes.Remove(preke);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        var preke = await dbContext.Prekes.FindAsync(id) ?? throw new InvalidOperationException("Preke Nerasta");
+        dbContext.Prekes.Remove(preke);
+        await dbContext.SaveChangesAsync();
     }
 }

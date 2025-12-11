@@ -6,26 +6,28 @@ namespace TopoCentras.Data.Repositories;
 
 public class UzsakymasRepository : IUzsakymasRepository
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public UzsakymasRepository(AppDbContext appDbContext)
+    public UzsakymasRepository(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _dbContext = appDbContext;
+        _dbContextFactory = dbContextFactory;
     }
 
 
-    public Task<Uzsakymas?> GetByIdAsync(Guid id)
+    public async Task<Uzsakymas?> GetByIdAsync(Guid id)
     {
-        return _dbContext.Uzsakymai
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.Uzsakymai
             .Include(u => u.UzsakymasPrekes)
             .ThenInclude(up => up.Preke)
             .Include(u => u.Klientas)
             .FirstOrDefaultAsync(u => u.UzsakymasId == id);
     }
 
-    public Task<List<Uzsakymas>> GetAllAsync()
+    public async Task<List<Uzsakymas>> GetAllAsync()
     {
-        return _dbContext.Uzsakymai
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.Uzsakymai
             .Include(u => u.Klientas)
             .Include(u => u.UzsakymasPrekes)
             .ThenInclude(up => up.Preke)
@@ -36,21 +38,24 @@ public class UzsakymasRepository : IUzsakymasRepository
 
     public async Task AddAsync(Uzsakymas uzsakymas)
     {
-        _dbContext.Uzsakymai.Add(uzsakymas);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.Uzsakymai.Add(uzsakymas);
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Uzsakymas uzsakymas)
     {
-        _dbContext.Uzsakymai.Update(uzsakymas);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.Uzsakymai.Update(uzsakymas);
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var uzsakymas = await _dbContext.Uzsakymai.FindAsync(id) ??
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        var uzsakymas = await dbContext.Uzsakymai.FindAsync(id) ??
                         throw new InvalidOperationException("Uzsakymas Nerastas");
-        _dbContext.Uzsakymai.Remove(uzsakymas);
-        await _dbContext.SaveChangesAsync();
+        dbContext.Uzsakymai.Remove(uzsakymas);
+        await dbContext.SaveChangesAsync();
     }
 }

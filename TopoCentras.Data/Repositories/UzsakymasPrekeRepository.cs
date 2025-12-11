@@ -1,41 +1,46 @@
-﻿using TopoCentras.Core.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using TopoCentras.Core.Interfaces;
 using TopoCentras.Core.Models;
 
 namespace TopoCentras.Data.Repositories;
 
 public class UzsakymasPrekeRepository : IUzsakymasPrekeRepository
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public UzsakymasPrekeRepository(AppDbContext dbContext)
+    public UzsakymasPrekeRepository(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
     }
 
 
-    public Task<UzsakymasPreke?> GetByIdAsync(Guid uzsakymasId, Guid prekeId)
+    public async Task<UzsakymasPreke?> GetByIdAsync(Guid uzsakymasId, Guid prekeId)
     {
-        return _dbContext.UzsakymoPrekes.FindAsync(uzsakymasId, prekeId).AsTask();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.UzsakymoPrekes.FindAsync(uzsakymasId, prekeId).AsTask();
     }
 
 
     public async Task AddAsync(UzsakymasPreke uzsakymasPreke)
     {
-        _dbContext.UzsakymoPrekes.Add(uzsakymasPreke);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.UzsakymoPrekes.Add(uzsakymasPreke);
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(UzsakymasPreke uzsakymasPreke)
     {
-        _dbContext.UzsakymoPrekes.Update(uzsakymasPreke);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.UzsakymoPrekes.Update(uzsakymasPreke);
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid uzsakymasId, Guid prekeId)
     {
-        var uzsakymasPreke = await _dbContext.UzsakymoPrekes.FindAsync(uzsakymasId, prekeId) ??
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        var uzsakymasPreke = await dbContext.UzsakymoPrekes.FindAsync(uzsakymasId, prekeId) ??
                              throw new InvalidOperationException("Uzsakymo Preke Nerasta");
-        _dbContext.UzsakymoPrekes.Remove(uzsakymasPreke);
-        await _dbContext.SaveChangesAsync();
+        dbContext.UzsakymoPrekes.Remove(uzsakymasPreke);
+        await dbContext.SaveChangesAsync();
     }
 }

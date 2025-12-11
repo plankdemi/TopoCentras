@@ -6,47 +6,52 @@ namespace TopoCentras.Data.Repositories;
 
 public class KlientasRepository : IKlientasRepository
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public KlientasRepository(AppDbContext dbContext)
+    public KlientasRepository(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
     }
 
-    public Task<Klientas?> GetByIdAsync(Guid id)
+    public async Task<Klientas?> GetByIdAsync(Guid id)
     {
-        return _dbContext.Klientai.FindAsync(id).AsTask();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.Klientai.FindAsync(id);
     }
 
-    public Task<List<Klientas>> GetAllAsync()
+    public async Task<List<Klientas>> GetAllAsync()
     {
-        return _dbContext.Klientai.AsNoTracking().ToListAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        return await dbContext.Klientai.AsNoTracking().ToListAsync();
     }
 
 
     public async Task AddAsync(Klientas klientas)
     {
-        _dbContext.Klientai.Add(klientas);
-        await _dbContext.SaveChangesAsync();
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.Klientai.Add(klientas);
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Klientas klientas)
     {
-        var existing = await _dbContext.Klientai.FindAsync(klientas.KlientasId);
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        var existing = await dbContext.Klientai.FindAsync(klientas.KlientasId);
         if (existing != null)
         {
             existing.Pavadinimas = klientas.Pavadinimas;
         }
 
 
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var klientas = await _dbContext.Klientai.FindAsync(id) ??
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        var klientas = await dbContext.Klientai.FindAsync(id) ??
                        throw new InvalidOperationException("Klientas Nerastas");
-        _dbContext.Klientai.Remove(klientas);
-        await _dbContext.SaveChangesAsync();
+        dbContext.Klientai.Remove(klientas);
+        await dbContext.SaveChangesAsync();
     }
 }
