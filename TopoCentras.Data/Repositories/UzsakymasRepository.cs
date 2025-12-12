@@ -43,10 +43,68 @@ public class UzsakymasRepository : IUzsakymasRepository
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Uzsakymas uzsakymas)
+    public async Task UpdateAsync(
+        Guid uzsakymasId,
+        Guid klientasId,
+        Dictionary<Guid, int> prekeKiekiai)
     {
         await using var dbContext = _dbContextFactory.CreateDbContext();
-        dbContext.Uzsakymai.Update(uzsakymas);
+        
+        var uzsakymas = await dbContext.Uzsakymai
+                            .Include(u => u.UzsakymasPrekes)
+                            .ThenInclude(up => up.Preke)
+                            .FirstOrDefaultAsync(u => u.UzsakymasId == uzsakymasId)
+                        ?? throw new InvalidOperationException("Uzsakymas nerastas");
+
+        var klientas = await dbContext.Klientai
+                           .FirstOrDefaultAsync(k => k.KlientasId == klientasId)
+                       ?? throw new InvalidOperationException("Klientas nerastas");
+
+        uzsakymas.KlientasId = klientasId;
+        uzsakymas.Klientas = klientas;
+
+        
+        var existingByPrekeId = uzsakymas.UzsakymasPrekes
+            .ToDictionary(up => up.PrekeId);
+
+       
+        foreach (var (prekeId, kiekis) in prekeKiekiai)
+        {
+            if (kiekis <= 0)
+                throw new ArgumentException("Kiekis turi buti didesnis uz nuli.", nameof(prekeKiekiai));
+
+            if (existingByPrekeId.TryGetValue(prekeId, out var existing))
+            {
+                existing.Kiekis = kiekis;
+            }
+            else
+            {
+                var preke = await dbContext.Prekes
+                                .FirstOrDefaultAsync(p => p.PrekeId == prekeId)
+                            ?? throw new InvalidOperationException("Preke nerasta");
+
+                uzsakymas.UzsakymasPrekes.Add(new UzsakymasPreke
+                {
+                    UzsakymasId = uzsakymas.UzsakymasId,
+                    PrekeId = prekeId,
+                    Preke = preke,
+                    Kiekis = kiekis
+                });
+            }
+        }
+
+        
+        var toRemove = uzsakymas.UzsakymasPrekes
+            .Where(up => !prekeKiekiai.ContainsKey(up.PrekeId))
+            .ToList();
+
+        foreach (var item in toRemove)
+            dbContext.UzsakymoPrekes.Remove(item);
+
+        
+        uzsakymas.BendraUzsakymoSuma = uzsakymas.UzsakymasPrekes
+            .Sum(up => up.Preke.Kaina * up.Kiekis);
+
         await dbContext.SaveChangesAsync();
     }
 

@@ -70,62 +70,11 @@ public class UzsakymasService : IUzsakymasService
     }
 
 
-    public async Task UpdateUzsakymasAsync(
+    public Task UpdateUzsakymasAsync(
         Guid uzsakymasId,
         Guid klientasId,
         Dictionary<Guid, int> prekeKiekiai)
-    {
-        var uzsakymas = await _uzsakymasRepository.GetByIdAsync(uzsakymasId)
-                        ?? throw new InvalidOperationException("Uzsakymas nerastas");
-
-        var klientas = await _klientasRepository.GetByIdAsync(klientasId)
-                       ?? throw new InvalidOperationException("Klientas nerastas");
-
-        uzsakymas.KlientasId = klientasId;
-        uzsakymas.Klientas = klientas;
-
-
-        var existingByPrekeId = uzsakymas.UzsakymasPrekes
-            .ToDictionary(up => up.PrekeId);
-
-
-        foreach (var (prekeId, kiekis) in prekeKiekiai)
-        {
-            if (kiekis <= 0)
-                throw new ArgumentException("Kiekis turi buti didesnis uz nuli.", nameof(prekeKiekiai));
-
-            if (existingByPrekeId.TryGetValue(prekeId, out var existing))
-            {
-                existing.Kiekis = kiekis;
-            }
-            else
-            {
-                var preke = await _prekeRepository.GetByIdAsync(prekeId)
-                            ?? throw new InvalidOperationException("Preke nerasta");
-
-                uzsakymas.UzsakymasPrekes.Add(new UzsakymasPreke
-                {
-                    UzsakymasId = uzsakymas.UzsakymasId,
-                    PrekeId = prekeId,
-                    Preke = preke,
-                    Kiekis = kiekis
-                });
-            }
-        }
-
-
-        var toRemove = uzsakymas.UzsakymasPrekes
-            .Where(up => !prekeKiekiai.ContainsKey(up.PrekeId))
-            .ToList();
-
-        foreach (var item in toRemove) uzsakymas.UzsakymasPrekes.Remove(item);
-
-
-        uzsakymas.BendraUzsakymoSuma = 0m;
-        foreach (var up in uzsakymas.UzsakymasPrekes) uzsakymas.BendraUzsakymoSuma += up.Preke.Kaina * up.Kiekis;
-
-        await _uzsakymasRepository.UpdateAsync(uzsakymas);
-    }
+        => _uzsakymasRepository.UpdateAsync(uzsakymasId, klientasId, prekeKiekiai);
 
     public Task DeleteUzsakymasAsync(Guid id)
     {
