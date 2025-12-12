@@ -34,8 +34,7 @@ public class UzsakymasRepository : IUzsakymasRepository
             .AsNoTracking()
             .ToListAsync();
     }
-
-
+    
     public async Task AddAsync(Uzsakymas uzsakymas)
     {
         await using var dbContext = _dbContextFactory.CreateDbContext();
@@ -56,57 +55,63 @@ public class UzsakymasRepository : IUzsakymasRepository
                             .FirstOrDefaultAsync(u => u.UzsakymasId == uzsakymasId)
                         ?? throw new InvalidOperationException("Uzsakymas nerastas");
 
+
         var klientas = await dbContext.Klientai
                            .FirstOrDefaultAsync(k => k.KlientasId == klientasId)
                        ?? throw new InvalidOperationException("Klientas nerastas");
 
         uzsakymas.KlientasId = klientasId;
-        uzsakymas.Klientas = klientas;
 
-        
-        var existingByPrekeId = uzsakymas.UzsakymasPrekes
-            .ToDictionary(up => up.PrekeId);
+        if (uzsakymas.UzsakymasPrekes.Any())
+        {
+            dbContext.UzsakymoPrekes.RemoveRange(uzsakymas.UzsakymasPrekes);
+            uzsakymas.UzsakymasPrekes.Clear();
+        }
 
-       
+
+        if (!prekeKiekiai.Any())
+        {
+            uzsakymas.BendraUzsakymoSuma = 0m;
+            await dbContext.SaveChangesAsync();
+            return;
+        }
+
+
+        var prekeIds = prekeKiekiai.Keys.ToList();
+
+        var prekes = await dbContext.Prekes
+            .Where(p => prekeIds.Contains(p.PrekeId))
+            .ToListAsync();
+
+        var prekesById = prekes.ToDictionary(p => p.PrekeId);
+
+
+        decimal total = 0m;
+
         foreach (var (prekeId, kiekis) in prekeKiekiai)
         {
             if (kiekis <= 0)
-                throw new ArgumentException("Kiekis turi buti didesnis uz nuli.", nameof(prekeKiekiai));
+                continue;
 
-            if (existingByPrekeId.TryGetValue(prekeId, out var existing))
-            {
-                existing.Kiekis = kiekis;
-            }
-            else
-            {
-                var preke = await dbContext.Prekes
-                                .FirstOrDefaultAsync(p => p.PrekeId == prekeId)
-                            ?? throw new InvalidOperationException("Preke nerasta");
+            if (!prekesById.TryGetValue(prekeId, out var preke))
+                throw new InvalidOperationException("Preke nerasta");
 
-                uzsakymas.UzsakymasPrekes.Add(new UzsakymasPreke
-                {
-                    UzsakymasId = uzsakymas.UzsakymasId,
-                    PrekeId = prekeId,
-                    Preke = preke,
-                    Kiekis = kiekis
-                });
-            }
+            var line = new UzsakymasPreke
+            {
+                UzsakymasId = uzsakymas.UzsakymasId,
+                PrekeId = prekeId,
+                Kiekis = kiekis
+            };
+
+            uzsakymas.UzsakymasPrekes.Add(line);
+            total += preke.Kaina * kiekis;
         }
 
-        
-        var toRemove = uzsakymas.UzsakymasPrekes
-            .Where(up => !prekeKiekiai.ContainsKey(up.PrekeId))
-            .ToList();
-
-        foreach (var item in toRemove)
-            dbContext.UzsakymoPrekes.Remove(item);
-
-        
-        uzsakymas.BendraUzsakymoSuma = uzsakymas.UzsakymasPrekes
-            .Sum(up => up.Preke.Kaina * up.Kiekis);
+        uzsakymas.BendraUzsakymoSuma = total;
 
         await dbContext.SaveChangesAsync();
     }
+
 
     public async Task DeleteAsync(Guid id)
     {
